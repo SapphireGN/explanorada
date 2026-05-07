@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Explanorada</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a08;--surface:#111110;--surface2:#181816;
+  --border:#2a2924;--border2:#3a3830;
+  --text:#ddd5c0;--muted:#7a7060;
+  --accent:#c8a84b;--accent2:#8a6f2a;--dim:#3a3220;
+  --red:#c05a3a;--green:#5a9060;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Crimson Pro',serif;font-weight:300;overflow:hidden}
+
+/* ── WORLD SELECT ── */
+#world-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem;z-index:100}
+#world-screen h1{font-family:'Cinzel',serif;font-size:36px;color:var(--accent);letter-spacing:4px;font-weight:400}
+#ws-sub{color:var(--muted);font-size:13px;letter-spacing:.1em;text-transform:uppercase}
+#worlds-list{display:flex;flex-direction:column;gap:6px;width:380px;max-height:260px;overflow-y:auto}
+.world-row{display:flex;align-items:center;gap:8px;border:1px solid var(--border);padding:12px 16px;cursor:pointer;background:var(--surface);transition:border-color .15s,background .15s}
+.world-row:hover{border-color:var(--accent2);background:var(--surface2)}
+.world-name{flex:1;font-family:'Cinzel',serif;font-size:13px;color:var(--text);letter-spacing:.05em}
+.world-time{font-size:11px;color:var(--muted)}
+.world-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px 6px;opacity:.4;transition:opacity .1s,color .1s}
+.world-del:hover{opacity:1;color:var(--red)}
+#new-row{display:flex;gap:8px;width:380px}
+#new-inp{flex:1;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'Crimson Pro',serif;font-size:14px;padding:10px 14px;outline:none}
+#new-inp:focus{border-color:var(--accent2)}
+#new-inp::placeholder{color:var(--muted)}
+#create-btn{background:var(--dim);border:1px solid var(--accent2);color:var(--accent);font-family:'Cinzel',serif;font-size:11px;letter-spacing:.1em;padding:10px 16px;cursor:pointer;transition:background .15s;white-space:nowrap}
+#create-btn:hover{background:var(--accent2)}
+
+/* key section */
+#key-section{width:380px;border-top:1px solid var(--border);padding-top:1.25rem;display:flex;flex-direction:column;gap:8px}
+#key-label-row{display:flex;align-items:center;justify-content:space-between}
+#key-label{font-family:'Cinzel',serif;font-size:11px;color:var(--muted);letter-spacing:.12em}
+#key-status{font-size:11px;color:var(--green)}
+#key-row{display:flex;gap:8px}
+#key-inp{flex:1;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'Crimson Pro',serif;font-size:13px;padding:9px 12px;outline:none;letter-spacing:.05em}
+#key-inp:focus{border-color:var(--accent2)}
+#key-inp::placeholder{color:var(--muted)}
+#key-save{background:var(--surface2);border:1px solid var(--border2);color:var(--muted);font-family:'Cinzel',serif;font-size:11px;letter-spacing:.08em;padding:9px 14px;cursor:pointer;transition:all .15s;white-space:nowrap}
+#key-save:hover{border-color:var(--accent2);color:var(--accent)}
+
+/* ── GAME SCREEN ── */
+#game-screen{position:fixed;inset:0;display:none;flex-direction:column}
+#topbar{display:flex;align-items:center;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0;height:42px}
+#tb-title{font-family:'Cinzel',serif;font-size:12px;color:var(--accent);letter-spacing:.15em;padding:0 16px;border-right:1px solid var(--border);height:100%;display:flex;align-items:center;flex-shrink:0}
+#tb-time{font-family:'Crimson Pro',serif;font-size:13px;padding:0 14px;border-right:1px solid var(--border);height:100%;display:flex;align-items:center;gap:8px;flex-shrink:0}
+#tb-day{color:var(--muted)}
+#tb-clock{color:var(--accent);font-weight:400}
+#tb-objects{flex:1;display:flex;align-items:center;gap:14px;padding:0 14px;overflow-x:auto}
+#tb-objects::-webkit-scrollbar{height:2px}
+#tb-objects::-webkit-scrollbar-thumb{background:var(--border2)}
+.obj-chip{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);white-space:nowrap;letter-spacing:.04em}
+.obj-chip .ov{color:var(--accent);font-weight:400}
+#tb-back{background:none;border:none;border-left:1px solid var(--border);color:var(--muted);cursor:pointer;font-family:'Crimson Pro',serif;font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:0 14px;height:100%;transition:color .15s;flex-shrink:0}
+#tb-back:hover{color:var(--accent)}
+#main{display:flex;flex:1;overflow:hidden}
+#narr-panel{width:300px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;background:var(--surface)}
+#narr-log{flex:1;overflow-y:auto;padding:1.25rem;display:flex;flex-direction:column;gap:10px}
+#narr-log::-webkit-scrollbar{width:3px}
+#narr-log::-webkit-scrollbar-thumb{background:var(--border2)}
+.ne{font-size:14px;line-height:1.65;animation:nf .25s ease forwards;border-left:2px solid var(--border);padding-left:10px}
+@keyframes nf{from{opacity:0;transform:translateX(-3px)}to{opacity:1;transform:translateX(0)}}
+.ne.old{color:var(--muted);border-color:transparent;font-size:13px}
+.ne.ev{color:var(--accent);font-style:italic;border-color:var(--accent2);font-size:12px;letter-spacing:.03em}
+#ui-panel{flex:1;overflow-y:auto;padding:1.5rem;display:flex;flex-direction:column;gap:10px}
+#ui-panel::-webkit-scrollbar{width:3px}
+#ui-panel::-webkit-scrollbar-thumb{background:var(--border2)}
+
+/* ai elements */
+.ai-header{font-family:'Cinzel',serif;font-size:14px;color:var(--accent);letter-spacing:.1em;border-bottom:1px solid var(--border);padding-bottom:7px;margin-top:4px}
+.ai-subheader{font-family:'Cinzel',serif;font-size:11px;color:var(--muted);letter-spacing:.08em;margin-top:2px}
+.ai-text{font-size:14px;line-height:1.7;color:var(--text)}
+.ai-text.sm{font-size:12px;color:var(--muted)}
+.ai-divider{border:none;border-top:1px solid var(--border);margin:2px 0}
+.btn-group{display:flex;flex-wrap:wrap;gap:8px}
+.ai-btn{background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-family:'Crimson Pro',serif;font-size:13px;padding:8px 16px;cursor:pointer;transition:all .15s;letter-spacing:.03em}
+.ai-btn:hover{border-color:var(--accent2);background:var(--dim);color:var(--accent)}
+.ai-btn:active{transform:scale(.97)}
+.ai-btn.primary{border-color:var(--accent2);background:var(--dim);color:var(--accent)}
+.ai-btn.danger{border-color:var(--red);color:var(--red)}
+.ai-btn.danger:hover{background:#2a1010}
+.ai-btn.disabled{opacity:.3;cursor:not-allowed;pointer-events:none}
+.ai-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.ai-card{background:var(--surface2);border:1px solid var(--border);padding:12px;display:flex;flex-direction:column;gap:3px}
+.ai-card .cl{font-size:10px;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.ai-card .cv{font-size:20px;color:var(--accent);font-family:'Cinzel',serif}
+.ai-card .cs{font-size:11px;color:var(--muted)}
+.ai-table{width:100%;border-collapse:collapse;font-size:13px}
+.ai-table th{text-align:left;padding:6px 10px;color:var(--muted);font-weight:400;border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+.ai-table td{padding:7px 10px;border-bottom:1px solid var(--border);color:var(--text)}
+.ai-table tr:last-child td{border-bottom:none}
+.ai-table tr:hover td{background:var(--surface2)}
+.ai-input-row{display:flex;gap:8px;align-items:center}
+.ai-inp{flex:1;background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-family:'Crimson Pro',serif;font-size:14px;padding:8px 12px;outline:none}
+.ai-inp:focus{border-color:var(--accent2)}
+.ai-inp::placeholder{color:var(--muted)}
+.ai-section{display:flex;flex-direction:column;gap:8px}
+#thinking{position:fixed;bottom:10px;right:14px;font-size:11px;color:var(--muted);font-style:italic;opacity:0;transition:opacity .2s;pointer-events:none;letter-spacing:.05em}
+#thinking.on{opacity:1}
+</style>
+</head>
+<body>
+
+<div id="world-screen">
+  <h1>EXPLANORADA</h1>
+  <p id="ws-sub">choose your world</p>
+  <div id="worlds-list"></div>
+  <div id="new-row">
+    <input id="new-inp" type="text" placeholder="Name your world..." maxlength="32"/>
+    <button id="create-btn">CREATE WORLD</button>
+  </div>
+  <div id="key-section">
+    <div id="key-label-row">
+      <span id="key-label">OLLAMA API KEY</span>
+      <span id="key-status"></span>
+    </div>
+    <div id="key-row">
+      <input id="key-inp" type="password" placeholder="Enter key..."/>
+      <button id="key-save">SAVE KEY</button>
+    </div>
+  </div>
+</div>
+
+<div id="game-screen">
+  <div id="topbar">
+    <div id="tb-title">EXPLANORADA</div>
+    <div id="tb-time"><span id="tb-day">Day 1</span><span id="tb-clock">06:00</span></div>
+    <div id="tb-objects"></div>
+    <button id="tb-back" onclick="exitMenu()">◂ Worlds</button>
+  </div>
+  <div id="main">
+    <div id="narr-panel"><div id="narr-log"></div></div>
+    <div id="ui-panel"></div>
+  </div>
+</div>
+<div id="thinking">thinking...</div>
+
+<script>
+// ── STORAGE ───────────────────────────────────────────────────────────────────
+const LS={
+  worlds(){try{return JSON.parse(localStorage.getItem('xr_worlds')||'{}')}catch{return{}}},
+  saveWorlds(w){localStorage.setItem('xr_worlds',JSON.stringify(w))},
+  world(id){try{return JSON.parse(localStorage.getItem('xr_w_'+id)||'null')}catch{return null}},
+  saveWorld(id,d){localStorage.setItem('xr_w_'+id,JSON.stringify(d))},
+  del(id){const w=LS.worlds();delete w[id];LS.saveWorlds(w);localStorage.removeItem('xr_w_'+id)},
+  key(){return localStorage.getItem('xr_api_key')||''},
+  saveKey(k){localStorage.setItem('xr_api_key',k)}
+};
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let CWid=null,GS=null,ticker=null,busy=false;
+
+// ── KEY MANAGEMENT ────────────────────────────────────────────────────────────
+function initKeyUI(){
+  const k=LS.key();
+  if(k){
+    document.getElementById('key-inp').value=k;
+    document.getElementById('key-status').textContent='key saved';
+  }
+}
+document.getElementById('key-save').onclick=()=>{
+  const k=document.getElementById('key-inp').value.trim();
+  LS.saveKey(k);
+  const st=document.getElementById('key-status');
+  st.textContent=k?'key saved':'key cleared';
+  setTimeout(()=>{st.textContent=k?'key saved':''},2000);
+};
+document.getElementById('key-inp').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('key-save').click()});
+
+// ── WORLD SELECT ──────────────────────────────────────────────────────────────
+function renderWorldSelect(){
+  const worlds=LS.worlds(),list=document.getElementById('worlds-list');
+  list.innerHTML='';
+  const ids=Object.keys(worlds);
+  if(!ids.length){
+    const e=document.createElement('div');
+    e.style.cssText='color:var(--muted);font-size:13px;padding:1rem;text-align:center';
+    e.textContent='No worlds yet. Create one below.';
+    list.appendChild(e);return;
+  }
+  ids.forEach(id=>{
+    const d=LS.world(id);
+    const tstr=d?.time?fmtTime(d.time):'Day 1, 06:00';
+    const row=document.createElement('div');
+    row.className='world-row';
+    row.innerHTML=`<span class="world-name">${worlds[id]}</span><span class="world-time">${tstr}</span><button class="world-del" title="Delete">✕</button>`;
+    row.querySelector('.world-del').onclick=e=>{e.stopPropagation();if(confirm('Delete "'+worlds[id]+'"?')){LS.del(id);renderWorldSelect()}};
+    row.onclick=()=>openWorld(id,worlds[id]);
+    list.appendChild(row);
+  });
+}
+
+document.getElementById('create-btn').onclick=()=>{
+  const name=document.getElementById('new-inp').value.trim();
+  if(!name)return;
+  if(!LS.key()){alert('Save an API key first.');return;}
+  const id='w'+Date.now();
+  const w=LS.worlds();w[id]=name;LS.saveWorlds(w);
+  document.getElementById('new-inp').value='';
+  openWorld(id,name,true);
+};
+document.getElementById('new-inp').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('create-btn').click()});
+
+function openWorld(id,name,fresh=false){
+  CWid=id;
+  GS=(!fresh&&LS.world(id))||{
+    worldName:name,time:{day:1,minutes:360},
+    objects:{},history:[],ui:[],narr:[]
+  };
+  document.getElementById('world-screen').style.display='none';
+  const gs=document.getElementById('game-screen');gs.style.display='flex';
+  document.getElementById('tb-title').textContent=name.toUpperCase();
+  startTicker();renderObjects();renderUI(GS.ui);renderNarr();
+  if(fresh)callAI({type:'INIT',worldName:name});
+}
+
+function exitMenu(){
+  stopTicker();saveWorld();
+  document.getElementById('game-screen').style.display='none';
+  document.getElementById('world-screen').style.display='flex';
+  CWid=null;GS=null;renderWorldSelect();
+}
+
+function saveWorld(){if(CWid&&GS)LS.saveWorld(CWid,GS)}
+
+// ── TIME ──────────────────────────────────────────────────────────────────────
+// 15x: 1 real second = 15 game seconds → 1 game minute = 4 real seconds
+function startTicker(){
+  stopTicker();
+  ticker=setInterval(()=>{
+    if(!GS)return;
+    GS.time.minutes++;
+    if(GS.time.minutes>=1440){GS.time.minutes=0;GS.time.day++;}
+    updTime();
+    if(GS.time.minutes%60===0)saveWorld();
+  },4000);
+}
+function stopTicker(){if(ticker){clearInterval(ticker);ticker=null}}
+function fmtTime(t){const h=Math.floor(t.minutes/60)%24,m=t.minutes%60;return`Day ${t.day}, ${pad(h)}:${pad(m)}`}
+function pad(n){return String(n).padStart(2,'0')}
+function updTime(){
+  if(!GS)return;
+  const h=Math.floor(GS.time.minutes/60)%24,m=GS.time.minutes%60;
+  document.getElementById('tb-day').textContent='Day '+GS.time.day;
+  document.getElementById('tb-clock').textContent=pad(h)+':'+pad(m);
+}
+
+// ── OBJECTS ───────────────────────────────────────────────────────────────────
+function renderObjects(){
+  const bar=document.getElementById('tb-objects');bar.innerHTML='';
+  if(!GS)return;
+  Object.entries(GS.objects).forEach(([k,o])=>{
+    if(o.hidden)return;
+    const c=document.createElement('div');c.className='obj-chip';
+    c.innerHTML=`<span>${o.label||k}</span><span class="ov">${o.value}</span>`;
+    bar.appendChild(c);
+  });
+}
+
+// ── NARRATIVE ─────────────────────────────────────────────────────────────────
+function renderNarr(){
+  const log=document.getElementById('narr-log');log.innerHTML='';
+  if(!GS)return;
+  (GS.narr||[]).forEach((e,i)=>{
+    const el=document.createElement('div');
+    const last=i===(GS.narr.length-1);
+    el.className='ne'+(last?'':' old')+(e.type==='ev'?' ev':'');
+    el.textContent=e.text;
+    log.appendChild(el);
+  });
+  log.scrollTop=log.scrollHeight;
+}
+function addNarr(text,type='n'){
+  GS.narr=GS.narr||[];
+  GS.narr.push({text,type});
+  if(GS.narr.length>60)GS.narr.shift();
+  renderNarr();
+}
+
+// ── UI RENDER ─────────────────────────────────────────────────────────────────
+function renderUI(els){
+  const p=document.getElementById('ui-panel');p.innerHTML='';
+  (els||[]).forEach(el=>renderEl(el,p));
+}
+function renderEl(el,parent){
+  if(!el||el.hidden)return;
+  switch(el.type){
+    case'header':{const h=document.createElement('div');h.className='ai-header';h.textContent=el.text||'';parent.appendChild(h);break}
+    case'subheader':{const h=document.createElement('div');h.className='ai-subheader';h.textContent=el.text||'';parent.appendChild(h);break}
+    case'text':{const t=document.createElement('div');t.className='ai-text'+(el.small?' sm':'');t.textContent=el.text||'';parent.appendChild(t);break}
+    case'divider':{const d=document.createElement('hr');d.className='ai-divider';parent.appendChild(d);break}
+    case'buttons':{
+      const g=document.createElement('div');g.className='btn-group';
+      (el.buttons||[]).forEach(b=>{
+        if(b.hidden)return;
+        const btn=document.createElement('button');
+        btn.className='ai-btn'+(b.style==='primary'?' primary':b.style==='danger'?' danger':'')+(b.disabled?' disabled':'');
+        btn.textContent=b.label||'';
+        btn.onclick=()=>onBtn(b.id,b.label);
+        g.appendChild(btn);
+      });
+      parent.appendChild(g);break;
+    }
+    case'cards':{
+      const g=document.createElement('div');g.className='ai-grid';
+      (el.cards||[]).forEach(c=>{
+        const d=document.createElement('div');d.className='ai-card';
+        d.innerHTML=`<div class="cl">${c.label||''}</div><div class="cv">${c.value??''}</div>${c.sub?`<div class="cs">${c.sub}</div>`:''}`;
+        g.appendChild(d);
+      });
+      parent.appendChild(g);break;
+    }
+    case'table':{
+      const w=document.createElement('div');w.style.overflowX='auto';
+      const t=document.createElement('table');t.className='ai-table';
+      if(el.headers){const thead=document.createElement('thead');const tr=document.createElement('tr');el.headers.forEach(h=>{const th=document.createElement('th');th.textContent=h;tr.appendChild(th)});thead.appendChild(tr);t.appendChild(thead)}
+      if(el.rows){const tb=document.createElement('tbody');el.rows.forEach(row=>{const tr=document.createElement('tr');row.forEach(cell=>{const td=document.createElement('td');td.textContent=cell;tr.appendChild(td)});tb.appendChild(tr)});t.appendChild(tb)}
+      w.appendChild(t);parent.appendChild(w);break;
+    }
+    case'section':{const s=document.createElement('div');s.className='ai-section';(el.children||[]).forEach(c=>renderEl(c,s));parent.appendChild(s);break}
+    case'input':{
+      const row=document.createElement('div');row.className='ai-input-row';
+      const inp=document.createElement('input');inp.className='ai-inp';inp.type='text';inp.placeholder=el.placeholder||'';
+      const btn=document.createElement('button');btn.className='ai-btn primary';btn.textContent=el.submitLabel||'OK';
+      btn.onclick=()=>{const v=inp.value.trim();if(!v)return;inp.value='';onInput(el.id,v)};
+      inp.addEventListener('keydown',e=>{if(e.key==='Enter')btn.click()});
+      row.appendChild(inp);row.appendChild(btn);parent.appendChild(row);break;
+    }
+  }
+}
+
+function onBtn(id,label){addNarr('› '+label,'ev');callAI({type:'BUTTON',id,label})}
+function onInput(id,value){addNarr('› '+value,'ev');callAI({type:'INPUT',id,value})}
+
+// ── AI ────────────────────────────────────────────────────────────────────────
+const SYSTEM=`You are the game engine for EXPLANORADA — a living world simulation game.
+
+Respond ONLY with a valid JSON object. No prose, no markdown, no explanation outside JSON.
+
+Schema:
+{
+  "narrative": "1-3 sentences. Terse, atmospheric. No questions. Just describe what happens.",
+  "objects": {
+    "key": {"label": "Display Name", "value": 50, "hidden": false}
+  },
+  "ui": [ ...elements ]
+}
+
+Objects are persistent variables shown in the top bar. Always carry them forward with updated values.
+
+UI element types:
+- {"type":"header","text":"..."}
+- {"type":"subheader","text":"..."}
+- {"type":"text","text":"...","small":false}
+- {"type":"divider"}
+- {"type":"buttons","buttons":[{"id":"btn_id","label":"Label","style":"normal|primary|danger","disabled":false,"hidden":false}]}
+- {"type":"cards","cards":[{"label":"Gold","value":"50","sub":"coins"}]}
+- {"type":"table","headers":["Name","Price"],"rows":[["Sword","10g"]]}
+- {"type":"section","children":[...elements]}
+- {"type":"input","id":"input_id","placeholder":"Enter amount...","submitLabel":"Buy"}
+
+Rules:
+- "ui" fully replaces the panel each turn. Design it like a game screen.
+- Always give 2-4 meaningful action buttons. Never leave the player with no options.
+- React to time of day. Shops close at night. People sleep. Things change.
+- The world is real — danger, economy, NPCs, weather, consequences.
+- No "What do you do?" ever. Just the world.
+- On INIT: Open with a vivid starting scene and 3-4 buttons to begin exploring.
+- Keep narrative SHORT. Let the UI do the talking.
+- Use cards for inventory, stats, prices, character info.
+- Use tables for trading menus, item lists with prices.
+- Use input elements for quantity entry, naming, text input.`;
+
+async function callAI(event){
+  if(busy)return;
+  busy=true;
+  const th=document.getElementById('thinking');th.classList.add('on');
+
+  const h=Math.floor(GS.time.minutes/60)%24,m=GS.time.minutes%60;
+  const ctx=`WORLD:${GS.worldName} | TIME:Day ${GS.time.day} ${pad(h)}:${pad(m)} | OBJECTS:${JSON.stringify(GS.objects)} | EVENT:${JSON.stringify(event)} | RECENT:${(GS.narr||[]).slice(-4).map(e=>e.text).join(' | ')}`;
+
+  GS.history=GS.history||[];
+  GS.history.push({role:'user',content:ctx});
+  if(GS.history.length>24)GS.history=GS.history.slice(-24);
+
+  try{
+    const res=await fetch('https://api.ollama.com/v1/chat/completions',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':'Bearer '+LS.key()
+      },
+      body:JSON.stringify({
+        model:'gpt-oss:20b-cloud',
+        messages:[
+          {role:'system',content:SYSTEM},
+          ...GS.history
+        ]
+      })
+    });
+    const data=await res.json();
+    const raw=data.choices?.[0]?.message?.content?.trim()||'';
+    let parsed;
+    try{parsed=JSON.parse(raw.replace(/^```json\s*/,'').replace(/```\s*$/,'').trim())}
+    catch{addNarr('[the world shudders — bad response]','ev');busy=false;th.classList.remove('on');return}
+
+    GS.history.push({role:'assistant',content:raw});
+    if(parsed.narrative)addNarr(parsed.narrative);
+    if(parsed.objects){Object.entries(parsed.objects).forEach(([k,v])=>{GS.objects[k]=v});renderObjects()}
+    if(parsed.ui){GS.ui=parsed.ui;renderUI(parsed.ui)}
+    saveWorld();
+  }catch(e){
+    addNarr('[connection lost — check your key]','ev');
+  }
+  busy=false;th.classList.remove('on');
+}
+
+// ── BOOT ─────────────────────────────────────────────────────────────────────
+initKeyUI();
+renderWorldSelect();
+</script>
+</body>
+</html>
