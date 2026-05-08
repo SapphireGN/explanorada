@@ -428,12 +428,7 @@ async function callAI(event){
     const res=await fetch(`${SERVER}/explanorada`,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({
-        messages:[
-          {role:'system',content:SYSTEM},
-          ...GS.history
-        ]
-      })
+      body:JSON.stringify({context:ctx})
     });
     const data=await res.json();
     if(data.error)throw new Error(data.error);
@@ -443,8 +438,7 @@ async function callAI(event){
     catch{addNarr('[the world shudders — bad response]','ev');busy=false;th.classList.remove('on');return}
 
     GS.history.push({role:'assistant',content:raw});
-    if(parsed.narrative)addNarr(parsed.narrative);
-    if(parsed.objects){Object.entries(parsed.objects).forEach(([k,v])=>{GS.objects[k]=v});renderObjects()}
+    if(parsed.narrative)addNarr(parsed.narrative);    if(parsed.objects){Object.entries(parsed.objects).forEach(([k,v])=>{GS.objects[k]=v});renderObjects()}
     if(parsed.ui){GS.ui=parsed.ui;renderUI(parsed.ui)}
     saveWorld();
   }catch(e){
