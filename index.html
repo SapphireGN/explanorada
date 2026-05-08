@@ -34,17 +34,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Crimso
 #create-btn{background:var(--dim);border:1px solid var(--accent2);color:var(--accent);font-family:'Cinzel',serif;font-size:11px;letter-spacing:.1em;padding:10px 16px;cursor:pointer;transition:background .15s;white-space:nowrap}
 #create-btn:hover{background:var(--accent2)}
 
-/* key section */
-#key-section{width:380px;border-top:1px solid var(--border);padding-top:1.25rem;display:flex;flex-direction:column;gap:8px}
-#key-label-row{display:flex;align-items:center;justify-content:space-between}
-#key-label{font-family:'Cinzel',serif;font-size:11px;color:var(--muted);letter-spacing:.12em}
-#key-status{font-size:11px;color:var(--green)}
-#key-row{display:flex;gap:8px}
-#key-inp{flex:1;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'Crimson Pro',serif;font-size:13px;padding:9px 12px;outline:none;letter-spacing:.05em}
-#key-inp:focus{border-color:var(--accent2)}
-#key-inp::placeholder{color:var(--muted)}
-#key-save{background:var(--surface2);border:1px solid var(--border2);color:var(--muted);font-family:'Cinzel',serif;font-size:11px;letter-spacing:.08em;padding:9px 14px;cursor:pointer;transition:all .15s;white-space:nowrap}
-#key-save:hover{border-color:var(--accent2);color:var(--accent)}
+
 
 /* ── GAME SCREEN ── */
 #game-screen{position:fixed;inset:0;display:none;flex-direction:column}
@@ -104,6 +94,18 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Crimso
 .ai-section{display:flex;flex-direction:column;gap:8px}
 #thinking{position:fixed;bottom:10px;right:14px;font-size:11px;color:var(--muted);font-style:italic;opacity:0;transition:opacity .2s;pointer-events:none;letter-spacing:.05em}
 #thinking.on{opacity:1}
+/* ── CREDIT OVERLAY ── */
+#credit-overlay{position:fixed;inset:0;background:rgba(10,10,8,.92);display:none;flex-direction:column;align-items:center;justify-content:center;gap:1.4rem;z-index:200;backdrop-filter:blur(4px)}
+#credit-overlay.on{display:flex}
+#co-title{font-family:'Cinzel',serif;font-size:18px;color:var(--accent);letter-spacing:.15em;text-align:center}
+#co-msg{font-size:14px;color:var(--muted);text-align:center;max-width:320px;line-height:1.6}
+#co-row{display:flex;gap:8px;width:320px}
+#co-inp{flex:1;background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'Crimson Pro',serif;font-size:14px;padding:10px 14px;outline:none;letter-spacing:.05em}
+#co-inp:focus{border-color:var(--accent2)}
+#co-inp::placeholder{color:var(--muted)}
+#co-btn{background:var(--dim);border:1px solid var(--accent2);color:var(--accent);font-family:'Cinzel',serif;font-size:11px;letter-spacing:.1em;padding:10px 16px;cursor:pointer;transition:background .15s;white-space:nowrap}
+#co-btn:hover{background:var(--accent2)}
+#co-err{font-size:12px;color:var(--red);font-style:italic;min-height:16px}
 </style>
 </head>
 <body>
@@ -116,16 +118,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Crimso
     <input id="new-inp" type="text" placeholder="Name your world..." maxlength="32"/>
     <button id="create-btn">CREATE WORLD</button>
   </div>
-  <div id="key-section">
-    <div id="key-label-row">
-      <span id="key-label">OLLAMA API KEY</span>
-      <span id="key-status"></span>
-    </div>
-    <div id="key-row">
-      <input id="key-inp" type="password" placeholder="Enter key..."/>
-      <button id="key-save">SAVE KEY</button>
-    </div>
-  </div>
+
 </div>
 
 <div id="game-screen">
@@ -133,12 +126,22 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Crimso
     <div id="tb-title">EXPLANORADA</div>
     <div id="tb-time"><span id="tb-day">Day 1</span><span id="tb-clock">06:00</span></div>
     <div id="tb-objects"></div>
+    <div id="tb-credits" style="font-family:'Cinzel',serif;font-size:10px;color:var(--muted);letter-spacing:.1em;padding:0 14px;border-left:1px solid var(--border);height:100%;display:flex;align-items:center;flex-shrink:0"></div>
     <button id="tb-back" onclick="exitMenu()">◂ Worlds</button>
   </div>
   <div id="main">
     <div id="narr-panel"><div id="narr-log"></div></div>
     <div id="ui-panel"></div>
   </div>
+</div>
+<div id="credit-overlay">
+  <div id="co-title">BETA TESTING CREDITS</div>
+  <div id="co-msg">You've run out of credits for Beta Testing.<br>Enter the access code to receive 100 more.</div>
+  <div id="co-row">
+    <input id="co-inp" type="password" placeholder="Access code..."/>
+    <button id="co-btn">UNLOCK</button>
+  </div>
+  <div id="co-err"></div>
 </div>
 <div id="thinking">thinking...</div>
 
@@ -150,6 +153,8 @@ const LS={
   world(id){try{return JSON.parse(localStorage.getItem('xr_w_'+id)||'null')}catch{return null}},
   saveWorld(id,d){localStorage.setItem('xr_w_'+id,JSON.stringify(d))},
   del(id){const w=LS.worlds();delete w[id];LS.saveWorlds(w);localStorage.removeItem('xr_w_'+id)},
+  getCredits(id){return parseInt(localStorage.getItem('xr_credits_'+id)||'100',10)},
+  saveCredits(id,n){localStorage.setItem('xr_credits_'+id,String(n))},
   key(){return localStorage.getItem('xr_api_key')||''},
   saveKey(k){localStorage.setItem('xr_api_key',k)}
 };
@@ -157,22 +162,51 @@ const LS={
 // ── STATE ─────────────────────────────────────────────────────────────────────
 let CWid=null,GS=null,ticker=null,busy=false;
 
-// ── KEY MANAGEMENT ────────────────────────────────────────────────────────────
-function initKeyUI(){
-  const k=LS.key();
-  if(k){
-    document.getElementById('key-inp').value=k;
-    document.getElementById('key-status').textContent='key saved';
-  }
+// ── CREDITS ───────────────────────────────────────────────────────────────────
+const CREDIT_PASSWORD='sapphiregamenet';
+const CREDITS_PER_BLOCK=100;
+
+function getCredits(){return CWid?LS.getCredits(CWid):0}
+function updCredits(){
+  const el=document.getElementById('tb-credits');
+  if(!el||!CWid)return;
+  const n=LS.getCredits(CWid);
+  el.textContent=n+' credits';
+  el.style.color=n<=10?'var(--red)':n<=25?'var(--accent)':'var(--muted)';
 }
-document.getElementById('key-save').onclick=()=>{
-  const k=document.getElementById('key-inp').value.trim();
-  LS.saveKey(k);
-  const st=document.getElementById('key-status');
-  st.textContent=k?'key saved':'key cleared';
-  setTimeout(()=>{st.textContent=k?'key saved':''},2000);
+function spendCredit(){
+  if(!CWid)return true;
+  const n=LS.getCredits(CWid);
+  if(n<=0){showCreditOverlay();return false;}
+  LS.saveCredits(CWid,n-1);
+  updCredits();
+  return true;
+}
+function showCreditOverlay(){
+  document.getElementById('co-inp').value='';
+  document.getElementById('co-err').textContent='';
+  document.getElementById('credit-overlay').classList.add('on');
+  setTimeout(()=>document.getElementById('co-inp').focus(),50);
+}
+function hideCreditOverlay(){
+  document.getElementById('credit-overlay').classList.remove('on');
+  updCredits();
+}
+document.getElementById('co-btn').onclick=()=>{
+  const val=document.getElementById('co-inp').value.trim();
+  if(val===CREDIT_PASSWORD){
+    LS.saveCredits(CWid,CREDITS_PER_BLOCK);
+    hideCreditOverlay();
+  } else {
+    const err=document.getElementById('co-err');
+    err.textContent='Incorrect code. Try again.';
+    document.getElementById('co-inp').value='';
+    document.getElementById('co-inp').focus();
+  }
 };
-document.getElementById('key-inp').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('key-save').click()});
+document.getElementById('co-inp').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('co-btn').click()});
+
+
 
 // ── WORLD SELECT ──────────────────────────────────────────────────────────────
 function renderWorldSelect(){
@@ -200,7 +234,6 @@ function renderWorldSelect(){
 document.getElementById('create-btn').onclick=()=>{
   const name=document.getElementById('new-inp').value.trim();
   if(!name)return;
-  if(!LS.key()){alert('Save an API key first.');return;}
   const id='w'+Date.now();
   const w=LS.worlds();w[id]=name;LS.saveWorlds(w);
   document.getElementById('new-inp').value='';
@@ -217,7 +250,7 @@ function openWorld(id,name,fresh=false){
   document.getElementById('world-screen').style.display='none';
   const gs=document.getElementById('game-screen');gs.style.display='flex';
   document.getElementById('tb-title').textContent=name.toUpperCase();
-  startTicker();renderObjects();renderUI(GS.ui);renderNarr();
+  startTicker();renderObjects();renderUI(GS.ui);renderNarr();updCredits();
   if(fresh)callAI({type:'INIT',worldName:name});
 }
 
@@ -379,6 +412,7 @@ Rules:
 
 async function callAI(event){
   if(busy)return;
+  if(!spendCredit())return;
   busy=true;
   const th=document.getElementById('thinking');th.classList.add('on');
 
@@ -390,16 +424,11 @@ async function callAI(event){
   if(GS.history.length>24)GS.history=GS.history.slice(-24);
 
   try{
-    // ── FIX 1: correct Ollama cloud endpoint ──
-    const res=await fetch('https://ollama.com/api/chat',{
+    const SERVER='https://detector-api-7jcy.onrender.com';
+    const res=await fetch(`${SERVER}/explanorada`,{
       method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'Authorization':'Bearer '+LS.key()
-      },
+      headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
-        model:'gpt-oss:20b-cloud',
-        stream:false,                          // ── FIX 2: disable streaming ──
         messages:[
           {role:'system',content:SYSTEM},
           ...GS.history
@@ -407,8 +436,8 @@ async function callAI(event){
       })
     });
     const data=await res.json();
-    // ── FIX 3: correct response shape (message.content, not choices[0].message.content) ──
-    const raw=data.message?.content?.trim()||'';
+    if(data.error)throw new Error(data.error);
+    const raw=data.content?.trim()||'';
     let parsed;
     try{parsed=JSON.parse(raw.replace(/^```json\s*/,'').replace(/```\s*$/,'').trim())}
     catch{addNarr('[the world shudders — bad response]','ev');busy=false;th.classList.remove('on');return}
@@ -425,7 +454,6 @@ async function callAI(event){
 }
 
 // ── BOOT ─────────────────────────────────────────────────────────────────────
-initKeyUI();
 renderWorldSelect();
 </script>
 </body>
