@@ -417,7 +417,8 @@ async function callAI(event){
   const th=document.getElementById('thinking');th.classList.add('on');
 
   const h=Math.floor(GS.time.minutes/60)%24,m=GS.time.minutes%60;
-  const ctx=`WORLD:${GS.worldName} | TIME:Day ${GS.time.day} ${pad(h)}:${pad(m)} | OBJECTS:${JSON.stringify(GS.objects)} | EVENT:${JSON.stringify(event)} | RECENT:${(GS.narr||[]).slice(-4).map(e=>e.text).join(' | ')}`;
+  const lastUI=GS.ui?JSON.stringify(GS.ui).slice(0,800):'none';
+  const ctx=`WORLD:${GS.worldName} | TIME:Day ${GS.time.day} ${pad(h)}:${pad(m)} | OBJECTS:${JSON.stringify(GS.objects)} | EVENT:${JSON.stringify(event)} | RECENT_NARR:${(GS.narr||[]).slice(-4).map(e=>e.text).join(' | ')} | LAST_UI:${lastUI}`;
 
   GS.history=GS.history||[];
   GS.history.push({role:'user',content:ctx});
