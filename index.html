@@ -231,7 +231,6 @@ function exitMenu(){
 function saveWorld(){if(CWid&&GS)LS.saveWorld(CWid,GS)}
 
 // ── TIME ──────────────────────────────────────────────────────────────────────
-// 15x: 1 real second = 15 game seconds → 1 game minute = 4 real seconds
 function startTicker(){
   stopTicker();
   ticker=setInterval(()=>{
@@ -391,7 +390,8 @@ async function callAI(event){
   if(GS.history.length>24)GS.history=GS.history.slice(-24);
 
   try{
-    const res=await fetch('https://api.ollama.com/v1/chat/completions',{
+    // ── FIX 1: correct Ollama cloud endpoint ──
+    const res=await fetch('https://ollama.com/api/chat',{
       method:'POST',
       headers:{
         'Content-Type':'application/json',
@@ -399,6 +399,7 @@ async function callAI(event){
       },
       body:JSON.stringify({
         model:'gpt-oss:20b-cloud',
+        stream:false,                          // ── FIX 2: disable streaming ──
         messages:[
           {role:'system',content:SYSTEM},
           ...GS.history
@@ -406,7 +407,8 @@ async function callAI(event){
       })
     });
     const data=await res.json();
-    const raw=data.choices?.[0]?.message?.content?.trim()||'';
+    // ── FIX 3: correct response shape (message.content, not choices[0].message.content) ──
+    const raw=data.message?.content?.trim()||'';
     let parsed;
     try{parsed=JSON.parse(raw.replace(/^```json\s*/,'').replace(/```\s*$/,'').trim())}
     catch{addNarr('[the world shudders — bad response]','ev');busy=false;th.classList.remove('on');return}
