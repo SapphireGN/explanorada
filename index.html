@@ -448,7 +448,7 @@ async function callAI(event){
     if(parsed.ui){GS.ui=parsed.ui;renderUI(parsed.ui)}
     saveWorld();
   }catch(e){
-    addNarr('[connection lost — check your key]','ev');
+    addNarr('[error: '+(e?.message||String(e))+']','ev');
   }
   busy=false;th.classList.remove('on');
 }
